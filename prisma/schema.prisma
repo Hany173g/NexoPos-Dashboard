@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+model License {
+  id            Int      @id @default(autoincrement())
+  key           String   @unique
+  storeName     String
+  storeType     String
+  machineId     String?
+  status        String   @default("pending")
+  plan          String
+  expiryDate    DateTime?
+  lastResetDate DateTime?
+  resetCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  payments      Payment[]
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  licenseId Int
+  amount    Decimal
+  plan      String
+  paidAt    DateTime @default(now())
+  license   License  @relation(fields: [licenseId], references: [id])
+}
+
+model Version {
+  id           Int      @id @default(autoincrement())
+  version      String   @unique
+  downloadUrl  String
+  checksum     String
+  releaseNotes String   @db.Text
+  isForced     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
