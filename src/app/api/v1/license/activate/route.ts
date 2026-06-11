@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function POST(request: Request) {
   try {
     const { licenseKey, machineId } = await request.json();
+
+    if (!licenseKey || typeof licenseKey !== "string") {
+      return NextResponse.json({ error: "Valid license key required" }, { status: 400 });
+    }
+    if (!machineId || typeof machineId !== "string" || machineId.length > 200) {
+      return NextResponse.json({ error: "Valid machine ID required" }, { status: 400 });
+    }
+
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`activate:${licenseKey}`, 5, 60000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: `Too many requests. Retry after ${rateCheck.retryAfter}s` }, { status: 429 });
+    }
 
     const license = await prisma.license.findUnique({
       where: { key: licenseKey },

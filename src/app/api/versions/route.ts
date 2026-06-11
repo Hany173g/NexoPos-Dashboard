@@ -2,13 +2,26 @@ import { NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limiter';
 
 const VERSIONS_DIR = path.join(process.cwd(), 'uploads', 'versions');
 const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ success: false, message: 'Unauthorized. Admin access required.' }, { status: 401 });
+    }
+
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`upload-version:${ip}`, 5, 60000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ success: false, message: `Too many requests. Retry after ${rateCheck.retryAfter}s` }, { status: 429 });
+    }
+
     const formData = await request.formData();
     const version = formData.get('version') as string;
     const releaseNotes = formData.get('releaseNotes') as string;

@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 import prisma from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession();
+    if (!session) {
+      return NextResponse.json({ success: false, error: "Unauthorized. Admin access required." }, { status: 401 });
+    }
+
     const { licenseKey, newMachineId } = await request.json();
+
+    if (!licenseKey || typeof licenseKey !== "string") {
+      return NextResponse.json({ success: false, error: "Invalid license key" }, { status: 400 });
+    }
+
+    const ip = getClientIp(request);
+    const rateCheck = checkRateLimit(`reset-machine:${ip}`, 5, 60000);
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ success: false, error: `Too many requests. Retry after ${rateCheck.retryAfter}s` }, { status: 429 });
+    }
 
     const license = await prisma.license.findUnique({
       where: { key: licenseKey },
@@ -24,7 +41,7 @@ export async function POST(request: Request) {
     const updatedLicense = await prisma.license.update({
       where: { key: licenseKey },
       data: {
-        machineId: newMachineId,
+        machineId: newMachineId || null,
         lastResetDate: new Date(),
         resetCount: license.resetCount + 1,
       },

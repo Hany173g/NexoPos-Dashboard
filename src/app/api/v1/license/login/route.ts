@@ -1,15 +1,22 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter"
 
 export async function POST(request: Request) {
   try {
     const { licenseKey, machineId } = await request.json()
 
-    if (!licenseKey || !machineId) {
-      return NextResponse.json(
-        { error: "License key and machine ID are required" },
-        { status: 400 }
-      )
+    if (!licenseKey || typeof licenseKey !== "string") {
+      return NextResponse.json({ error: "Valid license key required" }, { status: 400 })
+    }
+    if (!machineId || typeof machineId !== "string" || machineId.length > 200) {
+      return NextResponse.json({ error: "Valid machine ID required" }, { status: 400 })
+    }
+
+    const ip = getClientIp(request)
+    const rateCheck = checkRateLimit(`login:${licenseKey}`, 10, 60000)
+    if (!rateCheck.allowed) {
+      return NextResponse.json({ error: `Too many requests. Retry after ${rateCheck.retryAfter}s` }, { status: 429 })
     }
 
     const license = await prisma.license.findUnique({
@@ -17,20 +24,13 @@ export async function POST(request: Request) {
     })
 
     if (!license) {
-      return NextResponse.json(
-        { error: "Invalid license key" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Invalid license key" }, { status: 404 })
     }
 
     if (license.status === "suspended") {
-      return NextResponse.json(
-        { error: "License is suspended" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "License is suspended" }, { status: 403 })
     }
 
-    // Check if no machine ID is set - this means it was reset, so we set it
     if (!license.machineId) {
       const updatedLicense = await prisma.license.update({
         where: { key: licenseKey },
@@ -50,7 +50,6 @@ export async function POST(request: Request) {
 
         if (daysLeft <= 0) {
           licenseStatus = "expired"
-          // Update the status in database
           await prisma.license.update({
             where: { key: licenseKey },
             data: { status: "expired" },
@@ -67,15 +66,10 @@ export async function POST(request: Request) {
       })
     }
 
-    // Check if machine ID matches
     if (license.machineId !== machineId) {
-      return NextResponse.json(
-        { error: "Machine ID mismatch - license is used on another device" },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: "Machine ID mismatch - license is used on another device" }, { status: 403 })
     }
 
-    // Check expiry
     let licenseStatus = license.status
     let daysLeft = null
 
@@ -86,7 +80,6 @@ export async function POST(request: Request) {
 
       if (daysLeft <= 0) {
         licenseStatus = "expired"
-        // Update the status in database
         await prisma.license.update({
           where: { key: licenseKey },
           data: { status: "expired" },
@@ -103,9 +96,6 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error("Login error:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

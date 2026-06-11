@@ -38,6 +38,13 @@ model Payment {
   license   License  @relation(fields: [licenseId], references: [id])
 }
 
+model TelegramSubscription {
+  id         Int      @id @default(autoincrement())
+  chatId     String
+  licenseKey String   @unique
+  activatedAt DateTime @default(now())
+}
+
 model Version {
   id           Int      @id @default(autoincrement())
   version      String   @unique
