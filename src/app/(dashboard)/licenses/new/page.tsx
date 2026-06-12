@@ -79,7 +79,7 @@ export default function NewLicensePage() {
 
             <div>
               <Label htmlFor="plan">الخطة</Label>
-              <Select value={plan} onValueChange={setPlan} required>
+              <Select value={plan} onValueChange={setPlan}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر الخطة" />
                 </SelectTrigger>
@@ -94,7 +94,7 @@ export default function NewLicensePage() {
 
             <div>
               <Label htmlFor="duration">المدة</Label>
-              <Select value={duration} onValueChange={setDuration} required>
+              <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger>
                   <SelectValue placeholder="اختر المدة" />
                 </SelectTrigger>

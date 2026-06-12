@@ -249,11 +249,9 @@ export default function LicensesPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" side="bottom">
-                        <DropdownMenuItem asChild>
-                          <Link href={`/licenses/${license.id}`}>
-                            عرض التفاصيل
-                          </Link>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => router.push(`/licenses/${license.id}`)}>
+                          عرض التفاصيل
                         </DropdownMenuItem>
                         {effectiveStatus !== "suspended" && (
                           <DropdownMenuItem onClick={() => handleSuspend(license.id)}>
