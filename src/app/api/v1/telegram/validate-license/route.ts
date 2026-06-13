@@ -21,17 +21,16 @@ export async function POST(request: Request) {
     });
 
     if (!license) {
-      return NextResponse.json({ valid: false, error: "License not found" });
+      return NextResponse.json({ valid: false, status: "not_found", error: "License not found" });
     }
 
     const now = new Date();
-    let isExpired = false;
     if (license.expiryDate && now > license.expiryDate) {
-      isExpired = true;
+      return NextResponse.json({ valid: false, status: "expired", error: "License is expired" });
     }
 
-    if (license.status === "suspended" || isExpired) {
-      return NextResponse.json({ valid: false, error: "License is not active" });
+    if (license.status === "suspended") {
+      return NextResponse.json({ valid: false, status: "suspended", error: "الترخيص متوقف تواصل مع الدعم الفني" });
     }
 
     if (chat_id && typeof chat_id === "number") {

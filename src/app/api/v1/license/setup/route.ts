@@ -28,11 +28,11 @@ export async function POST(request: Request) {
     }
 
     if (license.status === "suspended") {
-      return NextResponse.json({ error: "License is suspended" }, { status: 403 })
+      return NextResponse.json({ success: false, status: "suspended", error: "License is suspended" }, { status: 403 })
     }
 
     if (license.status === "expired") {
-      return NextResponse.json({ error: "License is expired" }, { status: 403 })
+      return NextResponse.json({ success: false, status: "expired", error: "License is expired" }, { status: 403 })
     }
 
     const updatedLicense = await prisma.license.update({

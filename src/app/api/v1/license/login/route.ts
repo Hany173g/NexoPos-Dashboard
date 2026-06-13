@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     if (license.status === "suspended") {
-      return NextResponse.json({ error: "License is suspended" }, { status: 403 })
+      return NextResponse.json({ success: false, status: "suspended", error: "License is suspended" }, { status: 403 })
     }
 
     if (!license.machineId) {
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     if (license.machineId !== machineId) {
-      return NextResponse.json({ error: "Machine ID mismatch - license is used on another device" }, { status: 403 })
+      return NextResponse.json({ success: false, status: "invalid_machine", error: "Machine ID mismatch - license is used on another device" }, { status: 403 })
     }
 
     let licenseStatus = license.status

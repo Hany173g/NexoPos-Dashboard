@@ -27,6 +27,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid license key" }, { status: 400 });
     }
 
+    if (license.status === "suspended") {
+      return NextResponse.json({ success: false, status: "suspended", error: "License is suspended" }, { status: 403 });
+    }
+
     if (license.status === "active" && license.machineId && license.machineId !== machineId) {
       return NextResponse.json({ error: "License already activated on another machine" }, { status: 400 });
     }

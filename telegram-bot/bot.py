@@ -68,11 +68,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="HTML"
             )
         else:
-            await update.message.reply_text(
-                "❌ مفتاح الترخيص غير صحيح أو غير نشط.\n"
-                "⚠️ تأكد من أن الترخيص مفعّل وأنه غير منتهي الصلاحية.\n\n"
-                "الرجاء إدخال مفتاح ترخيص صحيح:"
-            )
+            status = result.get("status", "")
+            error_msg = result.get("error", "")
+
+            if status == "suspended":
+                msg = "❌ الترخيص متوقف تواصل مع الدعم الفني.\n\nالرجاء إدخال مفتاح ترخيص صحيح:"
+            elif status == "expired":
+                msg = "❌ الترخيص منتهي الصلاحية.\n⚠️ يرجى تجديد الاشتراك للاستمرار في استخدام البوت.\n\nالرجاء إدخال مفتاح ترخيص صحيح:"
+            elif status == "not_found":
+                msg = "❌ مفتاح الترخيص غير موجود.\n⚠️ تأكد من كتابة المفتاح بشكل صحيح.\n\nالرجاء إدخال مفتاح ترخيص صحيح:"
+            else:
+                msg = "❌ " + (error_msg if error_msg else "مفتاح الترخيص غير صحيح.") + "\n\nالرجاء إدخال مفتاح ترخيص صحيح:"
+
+            await update.message.reply_text(msg)
     else:
         keyboard = get_welcome_keyboard()
         await update.message.reply_text(

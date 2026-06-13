@@ -19,7 +19,10 @@ def validate_license_with_dashboard(license_key, chat_id=None):
         if resp.status_code == 200:
             return resp.json()
         logger.warning(f"Dashboard returned {resp.status_code}: {resp.text}")
-        return {"valid": False, "error": "Server error"}
+        try:
+            return resp.json()
+        except:
+            return {"valid": False, "error": "Server error"}
     except requests.RequestException as e:
         logger.error(f"Failed to contact dashboard: {e}")
         return {"valid": False, "error": "Connection failed"}

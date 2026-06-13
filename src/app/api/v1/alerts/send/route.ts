@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     }
 
     const license = await prisma.license.findUnique({ where: { key: licenseKey } });
-    if (!license || license.status !== "active") {
+    if (!license || (license.status !== "active" && license.status !== "pending")) {
       return NextResponse.json({ error: "License not found or not active" }, { status: 404 });
     }
 
