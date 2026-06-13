@@ -30,7 +30,7 @@ export async function POST(request: Request) {
       isExpired = true;
     }
 
-    if (license.status === "suspended" || license.status === "pending" || isExpired) {
+    if (license.status === "suspended" || isExpired) {
       return NextResponse.json({ valid: false, error: "License is not active" });
     }
 
